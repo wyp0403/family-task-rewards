@@ -3,6 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const path = require('path');
+const apiRedirectMiddleware = require('./middleware/apiRedirect.middleware'); // 导入新的中间件
 
 // 加载环境变量
 dotenv.config();
@@ -23,6 +24,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+app.use(apiRedirectMiddleware); // 添加 API 重定向中间件，处理双重 /api 前缀问题
 
 // 健康检查端点
 app.get('/health', (req, res) => {
