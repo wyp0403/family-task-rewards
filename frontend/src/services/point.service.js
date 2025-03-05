@@ -8,7 +8,7 @@ const PointService = {
    */
   async getUserPoints(userId) {
     try {
-      return await apiClient.get(`/points/user/${userId}`)
+      return await apiClient.get(`/points/user/${userId}`) // 移除了'/api'
     } catch (error) {
       throw error
     }
@@ -21,7 +21,7 @@ const PointService = {
    */
   async getPointHistory(userId) {
     try {
-      return await apiClient.get(`/points/history/${userId}`)
+      return await apiClient.get(`/points/history/${userId}`) // 移除了'/api'
     } catch (error) {
       throw error
     }
@@ -34,7 +34,7 @@ const PointService = {
    */
   async getFamilyLeaderboard(familyId) {
     try {
-      return await apiClient.get(`/points/leaderboard/${familyId}`)
+      return await apiClient.get(`/points/leaderboard/${familyId}`) // 移除了'/api'
     } catch (error) {
       throw error
     }
@@ -49,7 +49,7 @@ const PointService = {
    */
   async addPoints(userId, amount, reason) {
     try {
-      return await apiClient.post('/points/add', { userId, amount, reason })
+      return await apiClient.post('/points/add', { userId, amount, reason }) // 移除了'/api'
     } catch (error) {
       throw error
     }
@@ -64,7 +64,7 @@ const PointService = {
    */
   async deductPoints(userId, amount, reason) {
     try {
-      return await apiClient.post('/points/deduct', { userId, amount, reason })
+      return await apiClient.post('/points/deduct', { userId, amount, reason }) // 移除了'/api'
     } catch (error) {
       throw error
     }

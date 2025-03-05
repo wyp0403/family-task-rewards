@@ -9,9 +9,8 @@ const AuthService = {
    */
   async login(username, password) {
     try {
-      console.log('发送登录请求到:', `${process.env.VUE_APP_API_URL}/api/auth/login`);
-      console.log('登录数据:', { username });
-      const response = await apiClient.post('/auth/login', { username, password });
+      console.log('发送登录请求...');
+      const response = await apiClient.post('/auth/login', { username, password }); // 移除了'/api'
       console.log('登录响应:', response);
       return response;
     } catch (error) {
@@ -27,9 +26,8 @@ const AuthService = {
    */
   async register(userData) {
     try {
-      console.log('发送注册请求到:', `${process.env.VUE_APP_API_URL}/api/auth/register`);
-      console.log('注册数据:', userData);
-      const response = await apiClient.post('/auth/register', userData);
+      console.log('发送注册请求...');
+      const response = await apiClient.post('/auth/register', userData); // 移除了'/api'
       console.log('注册响应:', response);
       return response;
     } catch (error) {
@@ -45,7 +43,7 @@ const AuthService = {
   async getCurrentUser() {
     try {
       console.log('获取当前用户信息');
-      const response = await apiClient.get('/auth/me');
+      const response = await apiClient.get('/auth/me'); // 移除了'/api'
       console.log('用户信息响应:', response);
       return response;
     } catch (error) {
