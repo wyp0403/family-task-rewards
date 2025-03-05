@@ -39,6 +39,32 @@ app.get('/', (req, res) => {
   });
 });
 
+// Add API root endpoint - placed before Firebase initialization to ensure it works even if Firebase fails
+app.get('/api', (req, res) => {
+  console.log('Received /api request');
+  res.json({
+    message: '家庭任务积分兑换小程序API',
+    version: '1.0.0',
+    endpoints: [
+      '/api/auth',
+      '/api/tasks',
+      '/api/points',
+      '/api/rewards'
+    ],
+    status: firebaseInitialized ? 'fully_operational' : 'degraded',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Add test route
+app.get('/api-test', (req, res) => {
+  console.log('Received /api-test request');
+  res.json({
+    message: 'Test route is working properly',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // 尝试初始化 Firebase
 let firebaseInitialized = false;
 try {
@@ -61,12 +87,12 @@ try {
     app.use('/api/points', pointRoutes);
     app.use('/api/rewards', rewardRoutes);
     
-    console.log('所有路由加载成功');
+    console.log('All routes loaded successfully');
   } else {
     console.error('Firebase 对象为空，无法加载业务路由');
     
-    // 为所有 API 路由返回服务不可用的响应
-    app.use('/api/*', (req, res) => {
+    // For all API sub-routes, return service unavailable response
+    app.use('/api/:path([^/]+)/*', (req, res) => {
       res.status(503).json({
         success: false,
         message: '服务暂时不可用，Firebase 初始化失败',
@@ -77,8 +103,8 @@ try {
 } catch (error) {
   console.error('加载 Firebase 或路由时出错:', error);
   
-  // 为所有 API 路由返回服务不可用的响应
-  app.use('/api/*', (req, res) => {
+  // For all API sub-routes, return service unavailable response
+  app.use('/api/:path([^/]+)/*', (req, res) => {
     res.status(503).json({
       success: false,
       message: '服务暂时不可用，请稍后再试',
@@ -99,9 +125,11 @@ app.get('/status', (req, res) => {
 
 // 捕获 404 错误
 app.use((req, res, next) => {
+  console.log('404 Error - Path:', req.path);
   res.status(404).json({
     success: false,
-    message: '找不到请求的资源'
+    message: '找不到请求的资源',
+    path: req.path
   });
 });
 
@@ -137,6 +165,14 @@ app.listen(PORT, () => {
   if (!firebaseInitialized) {
     console.log('警告: 服务以降级模式运行，API 功能不可用');
   }
+  
+  // Print all registered routes
+  console.log('Registered routes:');
+  app._router.stack.forEach(function(r){
+    if (r.route && r.route.path){
+      console.log(r.route.path);
+    }
+  });
 });
 
 module.exports = app;
