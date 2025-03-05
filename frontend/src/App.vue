@@ -11,7 +11,7 @@
           <router-link to="/rewards">{{ $t('dashboard.rewards') }}</router-link>
           <router-link to="/points">{{ $t('dashboard.points') }}</router-link>
           <router-link to="/leaderboard">{{ $t('dashboard.leaderboard') }}</router-link>
-          <a href="#" @click.prevent="logout">{{ $t('common.logout') }}</a>
+          <a href="#" @click.prevent="handleLogout">{{ $t('common.logout') }}</a>
         </div>
       </div>
     </nav>
@@ -34,6 +34,13 @@ export default {
   
   methods: {
     ...mapActions('auth', ['logout', 'getCurrentUser']),
+    
+    // 新增处理登出的方法，包含重定向到登录页面
+    handleLogout() {
+      this.logout();
+      // 登出后重定向到登录页面
+      this.$router.push('/login');
+    },
     
     async initApp() {
       // 如果已经登录，获取最新的用户信息
