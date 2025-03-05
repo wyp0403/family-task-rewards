@@ -1,8 +1,8 @@
 import axios from 'axios'
 
-// 创建axios实例
+// 创建axios实例，使用环境变量中的API URL
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: `${process.env.VUE_APP_API_URL}/api`,
   headers: {
     'Content-Type': 'application/json'
   }
