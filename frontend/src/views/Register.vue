@@ -3,8 +3,17 @@
     <div class="card register-card">
       <h2 class="card-title">{{ $t('auth.register') }}</h2>
       
-      <div v-if="error" class="alert alert-danger">
-        {{ error }}
+      <!-- 服务状态提示 -->
+      <div v-if="serviceStatus === 'checking'" class="alert alert-info">
+        正在检查服务状态，请稍候...
+      </div>
+      <div v-if="serviceStatus === 'offline'" class="alert alert-warning">
+        后端服务可能正在启动中，请耐心等待或稍后再试。首次访问可能需要几分钟时间唤醒服务。
+      </div>
+      
+      <!-- 错误提示 -->
+      <div v-if="error || validationError" class="alert alert-danger">
+        {{ validationError || error }}
       </div>
       
       <form @submit.prevent="handleRegister">
@@ -90,11 +99,17 @@
         </div>
         
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="loading">
+          <button type="submit" class="btn btn-primary" :disabled="loading || serviceStatus === 'checking' || serviceStatus === 'offline'">
             {{ loading ? $t('common.loading') : $t('auth.register') }}
           </button>
         </div>
       </form>
+      
+      <div v-if="serviceStatus === 'offline'" class="retry-section">
+        <button @click="checkServiceStatus" class="btn btn-secondary">
+          重新检查服务状态
+        </button>
+      </div>
       
       <div class="login-link">
         <p>{{ $t('auth.login') }}? <router-link to="/login">{{ $t('auth.login') }}</router-link></p>
@@ -105,6 +120,7 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
+import apiClient from '../services/http.service'
 
 export default {
   name: 'Register',
@@ -119,7 +135,8 @@ export default {
         role: 'child',
         familyId: ''
       },
-      validationError: null
+      validationError: null,
+      serviceStatus: 'checking' // 'checking', 'online', 'offline'
     }
   },
   
@@ -127,12 +144,30 @@ export default {
     ...mapGetters('auth', ['loading', 'error'])
   },
   
+  mounted() {
+    // 组件加载时检查服务状态
+    this.checkServiceStatus()
+  },
+  
   methods: {
     ...mapActions('auth', ['register', 'clearError']),
     
+    // 检查后端服务状态
+    async checkServiceStatus() {
+      this.serviceStatus = 'checking'
+      try {
+        const isOnline = await apiClient.checkConnection()
+        this.serviceStatus = isOnline ? 'online' : 'offline'
+        console.log('服务状态:', this.serviceStatus)
+      } catch (error) {
+        console.error('检查服务状态出错:', error)
+        this.serviceStatus = 'offline'
+      }
+    },
+    
     validateForm() {
       if (this.formData.password !== this.formData.confirmPassword) {
-        this.validationError = this.$t('auth.passwordMismatch')
+        this.validationError = this.$t('auth.passwordMismatch') || '两次输入的密码不一致'
         return false
       }
       
@@ -144,17 +179,41 @@ export default {
       // 验证表单
       if (!this.validateForm()) return
       
+      // 再次检查服务状态
+      if (this.serviceStatus === 'offline') {
+        await this.checkServiceStatus()
+        if (this.serviceStatus === 'offline') {
+          this.validationError = '后端服务暂时不可用，请稍后再试'
+          return
+        }
+      }
+      
       try {
+        console.log('开始注册流程')
         // 提取confirmPassword，不发送到API
         const { confirmPassword, ...userData } = this.formData
         
+        // 显示详细的注册数据（不包括密码）
+        console.log('注册数据:', {
+          ...userData,
+          password: '******' // 隐藏密码
+        })
+        
         await this.register(userData)
+        console.log('注册成功')
         
         // 注册成功，跳转到仪表板
         this.$router.push('/dashboard')
       } catch (error) {
-        // 错误已经在store中处理
         console.error('注册失败:', error)
+        // 如果是服务不可用的错误，更新服务状态
+        if (error.message && (
+            error.message.includes('timeout') || 
+            error.message.includes('Network Error') ||
+            error.message.includes('服务器响应超时')
+        )) {
+          this.serviceStatus = 'offline'
+        }
       }
     }
   },
@@ -193,6 +252,12 @@ export default {
   width: 100%;
 }
 
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  margin-top: 1rem;
+}
+
 .login-link {
   margin-top: 1.5rem;
   text-align: center;
@@ -208,6 +273,18 @@ export default {
   background-color: #f8d7da;
   color: #721c24;
   border: 1px solid #f5c6cb;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+.alert-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
 }
 
 .role-options {
@@ -227,5 +304,9 @@ export default {
   margin-top: 0.25rem;
   font-size: 0.875rem;
   color: #6c757d;
+}
+
+.retry-section {
+  margin-top: 1rem;
 }
 </style>
